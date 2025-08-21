@@ -3,4 +3,4 @@ services:
     container_name: hello-world
     image: hello-world:linux
     hostname: hello-world
-    restart: never
+    restart: always
