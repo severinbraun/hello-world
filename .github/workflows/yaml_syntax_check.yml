@@ -1,18 +1,23 @@
 name: YAML Lint
 
 on:
+  push:
+    paths:
+      - "**/*.yml"
+      - "**/*.yaml"
   pull_request:
     paths:
       - "**/*.yml"
       - "**/*.yaml"
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pull-requests: write # nötig für hübsche PR-Annotations
+  pull-requests: write  # für PR-Annotations
 
 jobs:
   yamllint:
-    name: Run yamllint
+    name: Run yamllint (default rules)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -21,11 +26,6 @@ jobs:
       - name: YAML Lint
         uses: ibiqlik/action-yamllint@v3.1.1
         with:
-          # Lint das ganze Repo, aber durch "paths" oben wird nur bei YAML-Änderungen getriggert
           file_or_dir: "."
-          # Nutze GitHub-Format für Inline-Annotations in der PR
-          format: github
-          # Fail auch bei Warnungen (wenn du nur Errors willst, setz auf 'false')
-          strict: true
-          # Eigene Konfig laden (siehe unten)
-          config_file: ".yamllint"
+          format: github   # schöne Inline-Annotations
+          strict: true     # bricht bei Warnings ab; auf false setzen, wenn nur Errors zählen sollen
