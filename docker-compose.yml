@@ -2,5 +2,5 @@ services:
   homeassistant:
     container_name: hello-world
     image: hello-world:linux
-    hostname: hello-world
+    hostname: hello-world.veenpark.de
     restart: always
