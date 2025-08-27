@@ -1,0 +1,31 @@
+name: YAML Lint
+
+on:
+  pull_request:
+    paths:
+      - "**/*.yml"
+      - "**/*.yaml"
+
+permissions:
+  contents: read
+  pull-requests: write # nötig für hübsche PR-Annotations
+
+jobs:
+  yamllint:
+    name: Run yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: YAML Lint
+        uses: ibiqlik/action-yamllint@v3.1.1
+        with:
+          # Lint das ganze Repo, aber durch "paths" oben wird nur bei YAML-Änderungen getriggert
+          file_or_dir: "."
+          # Nutze GitHub-Format für Inline-Annotations in der PR
+          format: github
+          # Fail auch bei Warnungen (wenn du nur Errors willst, setz auf 'false')
+          strict: true
+          # Eigene Konfig laden (siehe unten)
+          config_file: ".yamllint"
