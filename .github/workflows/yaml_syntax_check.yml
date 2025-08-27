@@ -13,19 +13,31 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write  # für PR-Annotations
+  pull-requests: write
 
 jobs:
   yamllint:
-    name: Run yamllint (errors only)
+    name: Lint YAML (errors only + diagnostics)
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: YAML Lint
+      # 1) Diagnose-Run: klarer Konsolen-Output (bricht NICHT ab)
+      - name: Diagnostic yamllint (standard output)
+        run: |
+          python3 -m pip install --upgrade pip >/dev/null
+          python3 -m pip install yamllint >/dev/null
+          echo "=== yamllint (errors only, standard format) ==="
+          # Nur Errors anzeigen (keine Warnungen), nicht failen
+          yamllint -f standard . || true
+
+      # 2) Offizieller Run mit GitHub-Annotations (bricht bei Errors ab)
+      - name: YAML Lint (GitHub annotations)
         uses: ibiqlik/action-yamllint@v3.1.1
         with:
           file_or_dir: "."
-          format: github   # Inline-Annotations im PR/Commit
-          strict: false    # ❗️nur Errors brechen ab; Warnungen annotieren, aber Job bleibt grün
+          format: github
+          strict: false      # nur Errors brechen ab
+          no_warnings: true  # zeigt nur Errors (keine Warnungen)
