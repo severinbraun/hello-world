@@ -1,7 +1,8 @@
 name: YAML Lint
 
 on:
-  pull_request:
+  push:
+    branches: [ "main" ]   # ggf. anpassen
     paths:
       - "**/*.yml"
       - "**/*.yaml"
