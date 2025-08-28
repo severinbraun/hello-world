@@ -1,18 +1,21 @@
+---
 name: Lint YAML, Build & Push hello-world
 
-on:
+"# Hinweis":
+  Das Feld oben ist nur ein Kommentar-Workaround, weil yamllint manchmal Header-Kommentare nach '---' mag.
+  Kannst du auch weglassen.
+
+"on":
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
-# Rechte für GHCR
 permissions:
   contents: read
   packages: write
 
 env:
   REGISTRY: ghcr.io
-  # Ergebnis: ghcr.io/<owner>/hello-world:latest
   IMAGE_NAME: ${{ github.repository_owner }}/hello-world
 
 concurrency:
