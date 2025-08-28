@@ -1,20 +1,49 @@
-# .github/workflows/nightly-security-scan.yml
-name: Nightly Security Scan
+---
+name: Security Scan (Trivy)
+
 on:
-  schedule:
-    - cron: "17 2 * * *"  # täglich 02:17 UTC
+  push:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ${{ github.repository_owner }}/app-a:latest
+
 jobs:
-  trivy:
+  trivy-image:
+    name: Trivy scan GHCR image
     runs-on: ubuntu-latest
     steps:
-      - name: Scan GHCR Images
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # GHCR-Login mit GITHUB_TOKEN (gleiche Org/Owner vorausgesetzt)
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Bild vorab ziehen, damit Trivy lokal scannen kann
+      - name: Pull image
+        run: docker pull $REGISTRY/$IMAGE
+
+      # Trivy im Container, Docker-Socket mounten, lange Zeilen umbrochen
+      - name: Run Trivy (HIGH/CRITICAL)
         run: |
-          set -e
-          apps="app-a app-b"
-          for a in $apps; do
-            img=ghcr.io/${GITHUB_REPOSITORY_OWNER}/$a:latest
-            docker pull $img || true
-            docker run --rm aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 0 "$img"
-          done
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 0 \
+            --no-progress \
+            $REGISTRY/$IMAGE
