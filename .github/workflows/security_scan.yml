@@ -27,13 +27,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Trivy scan image (HIGH/CRITICAL)
+      - name: Pull image to local Docker
+        run: docker pull $REGISTRY/$IMAGE
+
+      - name: Trivy scan (HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE }}
-          format: table
+          scanners: vuln
           vuln-type: os,library
           severity: HIGH,CRITICAL
           ignore-unfixed: true
-          exit-code: 0           # CI nicht brechen; auf 1 setzen, wenn Findings Build failen sollen
-          scanners: vuln         # Secret-Scanner ausschalten, damit’s fokussiert bleibt
+          format: table
+          exit-code: 0
