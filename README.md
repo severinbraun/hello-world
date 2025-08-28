@@ -1,4 +1,4 @@
 # hello-world
 Test Docker Repository
 
-[![YAML Lint](https://github.com/severinbraun/hello-world/actions/workflows/yaml_syntax_check.yml/badge.svg)](https://github.com/severinbraun/hello-world/actions/workflows/yaml_syntax_check.yml)
+[![Lint YAML and mirror to GHCR](https://github.com/severinbraun/hello-world/actions/workflows/check_and_push.yml/badge.svg)](https://github.com/severinbraun/hello-world/actions/workflows/check_and_push.yml)
