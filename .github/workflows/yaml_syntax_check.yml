@@ -1,13 +1,9 @@
 ---
 name: Lint YAML, Build & Push hello-world
 
-"# Hinweis":
-  Das Feld oben ist nur ein Kommentar-Workaround, weil yamllint manchmal Header-Kommentare nach '---' mag.
-  Kannst du auch weglassen.
-
-"on":
+on:
   push:
-    branches: [main, master]
+    branches: [main,master]
   workflow_dispatch:
 
 permissions:
