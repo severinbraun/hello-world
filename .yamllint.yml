@@ -1,7 +1,10 @@
 extends: default
 
 rules:
+  line-length:
+    max: 120  # oder 0, um komplett zu deaktivieren
+    level: warning
   document-start:
     present: false
   truthy:
-    check-keys: false   # meckert nicht über "on:" als Schlüssel
+    check-keys: false
