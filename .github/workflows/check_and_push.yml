@@ -1,5 +1,5 @@
 ---
-name: Lint YAML, Mirror hello-world to GHCR
+name: Lint YAML and mirror to GHCR
 
 on:
   push:
