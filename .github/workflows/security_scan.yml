@@ -14,7 +14,7 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE: ${{ github.repository_owner }}/app-a:latest
+  IMAGE: ${{ github.repository_owner }}/hello-world:latest
 
 jobs:
   trivy-image:
