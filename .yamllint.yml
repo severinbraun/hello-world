@@ -1,0 +1,7 @@
+extends: default
+
+rules:
+  document-start:
+    present: false
+  truthy:
+    allowed-values: ["true", "false", "on"]
