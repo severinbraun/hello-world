@@ -1,9 +1,12 @@
 ---
 name: Lint YAML, Build & Push hello-world
 
-on:
+# Wir müssen "on" quoten, um yamllint glücklich zu machen
+"on":
   push:
-    branches: [main,master]
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 permissions:
