@@ -4,4 +4,4 @@ rules:
   document-start:
     present: false
   truthy:
-    allowed-values: ["true", "false", "on"]
+    check-keys: false   # meckert nicht über "on:" als Schlüssel
