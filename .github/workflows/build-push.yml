@@ -1,8 +1,7 @@
----
 name: Build & Push (Mono-Repo)
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
