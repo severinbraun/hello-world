@@ -3,10 +3,15 @@ name: Build & Push (Mono-Repo)
 on:
   push:
     branches: [main, master]
-    tags: ['v*']                 # ← reagiert auf Tag-Push (v1.2.3)
+    tags: ['v*']                 # baut beim Tag-Push
   release:
-    types: [created, published]  # ← reagiert auf Releases im UI
+    types: [published]           # baut beim Release (publish)
   workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer ohne 'v' (z.B. 1.2.3) – nur für manuellen Run"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -21,29 +26,75 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout (mit Tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # alle Commits
+          fetch-tags: true        # alle Tags
 
-      # Erzeugt automatisch Tags & Labels aus Branch, Tag, SHA etc.
-      - name: Docker meta (tags & labels)
+      - name: Resolve Version (Tag/Release/Manual)
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER_INPUT="${{ github.event.inputs.version || '' }}"
+          VER_TAG=""
+          # 1) Tag-Push
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            # refs/tags/v1.2.3 -> 1.2.3
+            VER_TAG="${GITHUB_REF_NAME#v}"
+          fi
+          # 2) Release-Event
+          if [ -z "${VER_TAG}" ] && [ "${{ github.event_name }}" = "release" ]; then
+            # release.tag_name: v1.2.3 oder 1.2.3
+            T="${{ github.event.release.tag_name }}"
+            VER_TAG="${T#v}"
+          fi
+          # 3) Manueller Input
+          VER="${VER_INPUT:-$VER_TAG}"
+
+          # Falls nix gesetzt, leer lassen
+          if [ -z "${VER}" ]; then
+            echo "version=" >> $GITHUB_OUTPUT
+            echo "major="   >> $GITHUB_OUTPUT
+            echo "minor="   >> $GITHUB_OUTPUT
+            echo "extra_tags=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # PARSEN: MAJOR.MINOR.PATCH
+          IFS='.' read -r MAJOR MINOR PATCH <<<"${VER}"
+
+          # Extra-Tagliste (Zeilengetrennt), die wir buildx direkt geben
+          {
+            echo "ghcr.io/${{ env.IMAGE_NAME }}:v${VER}"
+            echo "ghcr.io/${{ env.IMAGE_NAME }}:${VER}"
+            echo "ghcr.io/${{ env.IMAGE_NAME }}:${MAJOR}.${MINOR}"
+            echo "ghcr.io/${{ env.IMAGE_NAME }}:${MAJOR}"
+          } > /tmp/extra_tags.txt
+
+          echo "version=${VER}" >> $GITHUB_OUTPUT
+          echo "major=${MAJOR}" >> $GITHUB_OUTPUT
+          echo "minor=${MINOR}" >> $GITHUB_OUTPUT
+          echo "extra_tags=$(tr '\n' ',' < /tmp/extra_tags.txt | sed 's/,$//')" >> $GITHUB_OUTPUT
+
+      - name: Docker meta (branch/latest/sha)
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # Regeln:
+          # Standard-Tags (immer)
           tags: |
             type=ref,event=branch         # z.B. main
             type=raw,value=latest,enable={{is_default_branch}}
-            type=sha
-            # SemVer aus vX.Y.Z (bei Tags/Release)
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=sha,format=short,prefix=sha-
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ github.ref_name }}
 
       - uses: docker/setup-qemu-action@v3
+
       - uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
@@ -60,17 +111,22 @@ jobs:
           file: containers/hello-world/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          # Kombiniere die Standard-Tags mit den SemVer-Tags (falls vorhanden)
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ steps.ver.outputs.extra_tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             OWNER=${{ github.repository_owner }}
-          # auf 'true' stellen, wenn du Attestations/SBOM willst (dann erscheint ggf. "unknown/unknown")
           provenance: false
           sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Summary (which tags were pushed)
+      - name: Summary (welche Tags wurden gepusht)
         run: |
           echo "Pushed tags:"
-          echo '${{ steps.meta.outputs.tags }}' | tr ' ' '\n' | sed 's/^/- /'
+          printf '%s\n' "${{ steps.meta.outputs.tags }}" | tr ' ' '\n' | sed 's/^/- /'
+          if [ -n "${{ steps.ver.outputs.extra_tags }}" ]; then
+            echo "${{ steps.ver.outputs.extra_tags }}" | tr ',' '\n' | sed 's/^/- /'
+          fi
