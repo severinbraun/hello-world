@@ -1,8 +1,11 @@
-# hello-world
+# hello-world (mono-repo)
 
-## Local
+[![Lint](https://github.com/severinbraun/hello-world/actions/workflows/lint.yml/badge.svg)](…)
+[![Build & Push](https://github.com/severinbraun/hello-world/actions/workflows/build-push.yml/badge.svg)](…)
+[![Security Scan](https://github.com/severinbraun/hello-world/actions/workflows/security_scan.yml/badge.svg)](…)
+
+**Image:** `ghcr.io/severinbraun/hello-world:latest`
+
 ```bash
-make run
-```
-[![Lint YAML and mirror to GHCR](https://github.com/severinbraun/hello-world/actions/workflows/check_and_push.yml/badge.svg)](https://github.com/severinbraun/hello-world/actions/workflows/check_and_push.yml)
-[![Nightly Security Scan](https://github.com/severinbraun/hello-world/actions/workflows/security_scan.yml/badge.svg)](https://github.com/severinbraun/hello-world/actions/workflows/security_scan.yml)
+docker pull ghcr.io/severinbraun/hello-world:latest
+docker run --rm ghcr.io/severinbraun/hello-world:latest
