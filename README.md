@@ -1,4 +1,4 @@
-# hello-world (mono-repo)
+# hello-world
 
 [![Lint](https://github.com/severinbraun/hello-world/actions/workflows/lint.yml/badge.svg)](…)
 [![Build & Push](https://github.com/severinbraun/hello-world/actions/workflows/build-push.yml/badge.svg)](…)
