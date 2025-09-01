@@ -1,7 +1,0 @@
----
-services:
-  homeassistant:
-    container_name: hello-world
-    image: ghcr.io/severinbraun/hello-world:latest
-    hostname: hello-world
-    restart: always

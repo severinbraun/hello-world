@@ -1,0 +1,10 @@
+services:
+  hello-world:
+    build:
+      context: ../
+      dockerfile: containers/hello-world/Dockerfile
+    image: ghcr.io/${OWNER:-severinbraun}/hello-world:${TAG:-dev}
+    environment:
+      GREETING: "Hello"
+      TARGET: "Mono-Repo"
+    restart: unless-stopped
