@@ -1,14 +1,13 @@
----
 name: Security Scan (Trivy)
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
   contents: read
   packages: read
-  security-events: write   # für SARIF Upload
+  security-events: write
 
 env:
   REGISTRY: ghcr.io
