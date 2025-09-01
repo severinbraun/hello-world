@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1.9
 FROM alpine:3.20
 
+ARG OWNER=severinbraun
+
 LABEL org.opencontainers.image.source="https://github.com/${OWNER:-severinbraun}/hello-world" \
       org.opencontainers.image.title="hello-world (mono-repo demo)" \
       org.opencontainers.image.licenses="MIT"
