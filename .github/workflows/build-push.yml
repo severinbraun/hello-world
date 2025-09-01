@@ -2,6 +2,7 @@ name: Build & Push (Mono-Repo)
 on:
   push:
     branches: [main, master]
+    tags: ['v*']   # ← löst auch bei Releases aus
   workflow_dispatch:
 
 permissions:
@@ -35,7 +36,7 @@ jobs:
     name: Build & Push hello-world
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: needs.detect-changes.outputs.hello_world_changed == 'true' || github.event_name == 'workflow_dispatch'
+    if: needs.detect-changes.outputs.hello_world_changed == 'true' || github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -48,13 +49,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push (multi-arch, SBOM, provenance)
+      # SemVer aufbereiten, nur wenn Tag-Build
+      - name: Prepare SemVer tags
+        id: semver
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          VER="${GITHUB_REF_NAME#v}"        # v1.2.3 -> 1.2.3
+          MAJOR="${VER%%.*}"                # 1
+          MINOR="${VER#*.}"; MINOR="${MINOR%%.*}" # 2
+          echo "ver=$VER"       >> $GITHUB_OUTPUT
+          echo "major=$MAJOR"   >> $GITHUB_OUTPUT
+          echo "minor=$MINOR"   >> $GITHUB_OUTPUT
+
+      # Build bei Branch/PR: latest, main, sha
+      - name: Build & Push (branch)
+        if: github.ref_type != 'tag'
         uses: docker/build-push-action@v6
         with:
           context: containers/hello-world
           file: containers/hello-world/Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            OWNER=${{ github.repository_owner }}
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:${{ github.sha }}
@@ -62,7 +80,34 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-          provenance: mode=min
-          sbom: true
+          provenance: false   # auf Wunsch true; „unknown/unknown“ verschwindet so
+          sbom: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build bei Release-Tag: vX.Y.Z + 1.2.3 + 1.2 + 1
+      - name: Build & Push (release tag)
+        if: github.ref_type == 'tag'
+        uses: docker/build-push-action@v6
+        with:
+          context: containers/hello-world
+          file: containers/hello-world/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            OWNER=${{ github.repository_owner }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:v${{ steps.semver.outputs.ver }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:${{ steps.semver.outputs.ver }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:${{ steps.semver.outputs.major }}.${{ steps.semver.outputs.minor }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/hello-world:${{ steps.semver.outputs.major }}
+          labels: |
+            org.opencontainers.image.source=${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=v${{ steps.semver.outputs.ver }}
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
